@@ -1,0 +1,29 @@
+[package]
+name = "canto"
+version = "0.1.1"
+edition = "2021"
+authors = ["Mads Ravn <madsravn@gmail.com>"]
+license = "GPL-3.0"
+keywords = ["audio", "tool"]
+categories = ["multimedia::audio"]
+repository = "https://github.com/madsravn/canto"
+description = "Canto is a tool used to compare audio files. Developed with CI in mind."
+include = [
+  "src/**/*",
+  "Cargo.toml",
+  "GPLv3-license",
+  "README.md",
+  "examples/**/*"
+]
+
+
+[lib]
+name = "canto"
+path = "src/lib.rs"
+
+[[bin]]
+name = "canto"
+path = "src/bin/main.rs" 
+
+[dependencies]
+hound = "3.5.0"

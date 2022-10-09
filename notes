@@ -1,0 +1,14 @@
+https://oxygene.sk/2011/01/how-does-chromaprint-work/
+
+
+https://shivama205.medium.com/audio-signals-comparison-23e431ed2207
+
+
+I would like to compare length, average amplitude and the two signals subtracted.
+
+
+Make a config file.
+
+Success crits, fail crits.
+Check fail crits. If they are true, fail. Check success crits. If they are true, succeed. Else fail
+If nothing is stated, just output values

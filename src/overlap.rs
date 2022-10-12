@@ -15,7 +15,7 @@ pub struct Position {
 }
 
 pub fn open_sound(filename: &str) -> Sound {
-    let reader = hound::WavReader::open(filename).expect("Should be able to open file");
+    let reader = hound::WavReader::open(filename).expect(&format!("Should be able to open file: {}", filename));
     let sample_rate = reader.spec().sample_rate;
     let samples: Vec<i16> = reader
         .into_samples()
@@ -42,7 +42,7 @@ pub fn find_overlap(master_sound: &Sound, needle_sound: &Sound) -> Vec<Position>
         if let Some(positions) = master_sound.index.get(sample) {
             for position in positions.iter() {
                 // Look here if we need to continue
-                if check_if_continue(*position, i, &vec) {
+                if check_if_continue(i, *position, &vec) {
                     continue
                 }
                 let length = find_similar_length(master_sound, needle_sound, *position, i);
@@ -52,7 +52,7 @@ pub fn find_overlap(master_sound: &Sound, needle_sound: &Sound) -> Vec<Position>
                     length,
                 };
 
-                if pos.length > 20 {
+                if pos.length > 63 {
                     println!("Adding {:?}", pos);
                     vec.push(pos);
                 }
@@ -64,10 +64,13 @@ pub fn find_overlap(master_sound: &Sound, needle_sound: &Sound) -> Vec<Position>
 
 
 fn check_if_continue(start_one: usize, start_two: usize, positions: &Vec<Position>) -> bool {
+    let res: Vec<&Position> = positions.iter().filter( |x| x.start_one < start_one
+                             && x.start_two < start_two
+                             && start_one < x.start_one + x.length
+                             && start_two < x.start_two + x.length).filter(|x|
+                             start_two.saturating_sub(start_one) == x.start_two.saturating_sub(x.start_one)).collect();
 
-
-
-    true
+    !res.is_empty()
 }
 
 fn find_similar_length(
@@ -77,13 +80,19 @@ fn find_similar_length(
     sound_two_start_pos: usize,
 ) -> usize {
     let mut length: usize = 0;
-    while &sound_one.samples.get(sound_one_start_pos + length)
-        == &sound_two.samples.get(sound_two_start_pos + length)
-    {
+    while &sound_one.samples.get(sound_one_start_pos + length) == &sound_two.samples.get(sound_two_start_pos + length) {
         if &sound_one.samples.get(sound_one_start_pos + length) == &None {
             break;
         }
         length = length + 1;
     }
-    length
+    
+    let count_non_zeroes = &sound_one.samples[sound_one_start_pos..sound_one_start_pos+length].iter().filter(|&x| x.clone() != 0).count();
+    if count_non_zeroes.clone() > 63 {
+        //println!("FIRST: {:?}", &sound_one.samples[sound_one_start_pos..sound_one_start_pos+length]);
+        //println!("SECOND: {:?}", &sound_two.samples[sound_two_start_pos..sound_two_start_pos+length]);
+        return length;
+    } else {
+        0
+    }
 }

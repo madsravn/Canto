@@ -1,10 +1,13 @@
 use hound;
 use std::collections::HashMap;
+use std::path::Path;
 
+#[derive(Clone,Debug)]
 pub struct Sound {
-    samples: Vec<i16>,
+    pub samples: Vec<i16>,
     index: HashMap<i16, Vec<usize>>,
-    sample_rate: u32,
+    pub sample_rate: u32,
+    pub name: String,
 }
 
 #[derive(Debug)]
@@ -13,6 +16,8 @@ pub struct Position {
     pub start_two: usize,
     pub length: usize,
 }
+
+const THRESHOLD: i16 = 2;
 
 pub fn open_sound(filename: &str) -> Sound {
     let reader = hound::WavReader::open(filename).expect(&format!("Should be able to open file: {}", filename));
@@ -26,11 +31,13 @@ pub fn open_sound(filename: &str) -> Sound {
     for (i, s) in samples.iter().enumerate() {
         index.entry(*s).or_insert(Vec::new()).push(i);
     }
+    let short_filename = Path::new(filename).file_stem().expect("Should have a filename").to_str().expect("Should be able to convert to str").to_string();
 
     Sound {
         samples,
         index,
         sample_rate,
+        name: short_filename
     }
 }
 
@@ -47,13 +54,13 @@ pub fn find_overlap(master_sound: &Sound, needle_sound: &Sound) -> Vec<Position>
                 }
                 let length = find_similar_length(master_sound, needle_sound, *position, i);
                 let pos = Position {
-                    start_one: i,
-                    start_two: *position,
+                    start_one: *position,
+                    start_two: i,
                     length,
                 };
 
                 if pos.length > 63 {
-                    println!("Adding {:?}", pos);
+                    //println!("Adding {:?}", pos);
                     vec.push(pos);
                 }
             }
@@ -73,6 +80,16 @@ fn check_if_continue(start_one: usize, start_two: usize, positions: &Vec<Positio
     !res.is_empty()
 }
 
+// TODO: Which trait lets us subtract values? 
+fn within_threshold(one: &Option<&i16>, two: &Option<&i16>) -> bool {
+    let res = match (one, two) {
+        (Some(&a), Some(&b)) => (a-b).abs() < THRESHOLD,
+        _ => false
+    };
+    res
+
+}
+
 fn find_similar_length(
     sound_one: &Sound,
     sound_two: &Sound,
@@ -80,15 +97,17 @@ fn find_similar_length(
     sound_two_start_pos: usize,
 ) -> usize {
     let mut length: usize = 0;
-    while &sound_one.samples.get(sound_one_start_pos + length) == &sound_two.samples.get(sound_two_start_pos + length) {
+    //while &sound_one.samples.get(sound_one_start_pos + length) == &sound_two.samples.get(sound_two_start_pos + length) {
+    while within_threshold(&sound_one.samples.get(sound_one_start_pos + length), &sound_two.samples.get(sound_two_start_pos + length)) {
         if &sound_one.samples.get(sound_one_start_pos + length) == &None {
             break;
         }
         length = length + 1;
     }
     
-    let count_non_zeroes = &sound_one.samples[sound_one_start_pos..sound_one_start_pos+length].iter().filter(|&x| x.clone() != 0).count();
-    if count_non_zeroes.clone() > 63 {
+    let count_non_zeroes = &sound_one.samples[sound_one_start_pos..sound_one_start_pos+length].iter().filter(|&x| x.clone().abs() > THRESHOLD - 1).count();
+    let count_non_zeroes_two = &sound_two.samples[sound_two_start_pos..sound_two_start_pos+length].iter().filter(|&x| x.clone().abs() > THRESHOLD - 1).count();
+    if count_non_zeroes.clone() > 63 || count_non_zeroes_two.clone() > 63 {
         //println!("FIRST: {:?}", &sound_one.samples[sound_one_start_pos..sound_one_start_pos+length]);
         //println!("SECOND: {:?}", &sound_two.samples[sound_two_start_pos..sound_two_start_pos+length]);
         return length;

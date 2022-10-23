@@ -26,4 +26,5 @@ name = "canto"
 path = "src/bin/main.rs" 
 
 [dependencies]
+plotlib = "0.5.1"
 hound = "3.5.0"

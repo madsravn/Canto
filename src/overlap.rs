@@ -8,6 +8,8 @@ pub struct Sound {
     index: HashMap<i16, Vec<usize>>,
     pub sample_rate: u32,
     pub name: String,
+    pub max: i16,
+    pub min: i16,
 }
 
 #[derive(Debug)]
@@ -32,12 +34,16 @@ pub fn open_sound(filename: &str) -> Sound {
         index.entry(*s).or_insert(Vec::new()).push(i);
     }
     let short_filename = Path::new(filename).file_stem().expect("Should have a filename").to_str().expect("Should be able to convert to str").to_string();
+    let min = samples.iter().fold(i16::MAX, |a, &b| a.min(b));
+    let max = samples.iter().fold(i16::MIN, |a, &b| a.max(b));
 
     Sound {
         samples,
         index,
         sample_rate,
-        name: short_filename
+        name: short_filename,
+        min,
+        max,
     }
 }
 

@@ -39,7 +39,15 @@ pub fn main() {
             .collect();
 
         let input_eight: Vec<Sound> = input.iter().filter(|x| x.sample_rate == 8000).map(|x| x.clone()).collect();
+        let min = input_eight.iter().fold(i16::MAX, |a, b| a.min(b.min));
+        let max = input_eight.iter().fold(i16::MIN, |a, b| a.max(b.max));
+        println!("Input eight: min: {}, max: {}", min, max);
         let input_sixteen: Vec<Sound> = input.iter().filter(|x| x.sample_rate == 16000).map(|x| x.clone()).collect();
+        let min = input_sixteen.iter().fold(i16::MAX, |a, b| a.min(b.min));
+        let max = input_sixteen.iter().fold(i16::MIN, |a, b| a.max(b.max));
+
+        println!("Input sixteen: min: {}, max: {}", min, max);
+
         //println!("{:?}", input_eight[0]);
         //plot(&input_eight[0].samples, &input_eight[0].name);
 

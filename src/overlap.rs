@@ -5,7 +5,7 @@ use std::path::Path;
 #[derive(Clone,Debug)]
 pub struct Sound {
     pub samples: Vec<i16>,
-    index: HashMap<i16, Vec<usize>>,
+    index: Vec<Vec<usize>>,
     pub sample_rate: u32,
     pub name: String,
     pub max: i16,
@@ -29,10 +29,11 @@ pub fn open_sound(filename: &str) -> Sound {
         .filter(|s| s.is_ok())
         .map(|s| s.unwrap())
         .collect();
-    let mut index = HashMap::new();
+    let mut index: Vec<Vec<usize>> = Vec::new();
     for (i, s) in samples.iter().enumerate() {
-        index.entry(*s).or_insert(Vec::new()).push(i);
+        index[(*s as i32 + 128) as usize].push(i);
     }
+
     let short_filename = Path::new(filename).file_stem().expect("Should have a filename").to_str().expect("Should be able to convert to str").to_string();
     let min = samples.iter().fold(i16::MAX, |a, &b| a.min(b));
     let max = samples.iter().fold(i16::MIN, |a, &b| a.max(b));
@@ -52,23 +53,23 @@ pub fn find_overlap(master_sound: &Sound, needle_sound: &Sound) -> Vec<Position>
     let mut vec = Vec::new();
 
     for (i, sample) in needle_sound.samples.iter().enumerate() {
-        if let Some(positions) = master_sound.index.get(sample) {
-            for position in positions.iter() {
-                // Look here if we need to continue
-                if check_if_continue(i, *position, &vec) {
-                    continue
-                }
-                let length = find_similar_length(master_sound, needle_sound, *position, i);
-                let pos = Position {
-                    start_one: *position,
-                    start_two: i,
-                    length,
-                };
+        let positions = get_samples(*sample, &master_sound.index);
 
-                if pos.length > 63 {
-                    //println!("Adding {:?}", pos);
-                    vec.push(pos);
-                }
+        for position in positions.iter() {
+            // Look here if we need to continue
+            if check_if_continue(i, *position, &vec) {
+                continue
+            }
+            let length = find_similar_length(master_sound, needle_sound, *position, i);
+            let pos = Position {
+                start_one: *position,
+                start_two: i,
+                length,
+            };
+
+            if pos.length > 63 {
+                //println!("Adding {:?}", pos);
+                vec.push(pos);
             }
         }
     }
@@ -94,6 +95,12 @@ fn within_threshold(one: &Option<&i16>, two: &Option<&i16>) -> bool {
     };
     res
 
+}
+
+// TODO: Lifetimes
+fn get_samples(pos: i16, index: &Vec<Vec<usize>>) -> Vec<usize> {
+    let position = ((pos as i32) + 128) as usize;
+    index[position].clone()
 }
 
 fn find_similar_length(

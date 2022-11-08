@@ -84,6 +84,7 @@ pub fn main() {
         // 8 KHz and 16 KHz. Can we compare these at all?
     } 
     if args.len() == 4  {
+        println!("Correct");
         let filename = &args[1];
         let start = args[2].parse::<usize>().unwrap();
         let end = start + args[3].parse::<usize>().unwrap();

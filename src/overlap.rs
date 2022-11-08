@@ -29,7 +29,7 @@ pub fn open_sound(filename: &str) -> Sound {
         .filter(|s| s.is_ok())
         .map(|s| s.unwrap())
         .collect();
-    let mut index: Vec<Vec<usize>> = Vec::new();
+    let mut index: Vec<Vec<usize>> = vec![Vec::new();300];
     for (i, s) in samples.iter().enumerate() {
         index[(*s as i32 + 128) as usize].push(i);
     }
